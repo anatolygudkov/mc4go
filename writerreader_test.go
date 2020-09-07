@@ -34,23 +34,23 @@ func TestFull(t *testing.T) {
 		statics[fmt.Sprintf("%s%d", propertyPrefix, i)] = fmt.Sprintf("%s%d", valuePrefix, i)
 	}
 
-	writer, err := NewWriterForFile(filename, statics, numberOfCounters)
+	w, err := NewWriterForFile(filename, statics, numberOfCounters)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(filename)
-	defer writer.Close()
+	defer w.Close()
 
-	reader, err := NewReaderForFile(filename)
+	r, err := NewReaderForFile(filename)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer reader.Close()
+	defer r.Close()
 
 	var counters []*Counter
 
 	for i := 0; i < numberOfCounters; i++ {
-		counter, err := writer.AddCounter(fmt.Sprintf("%s%d", counterPrefix, i))
+		counter, err := w.AddCounter(fmt.Sprintf("%s%d", counterPrefix, i))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -62,7 +62,7 @@ func TestFull(t *testing.T) {
 
 	numOfStaticsCounted := 0
 
-	reader.ForEachStatic(func(label, value string) bool {
+	r.ForEachStatic(func(label, value string) bool {
 		staticLabel := fmt.Sprintf("%s%d", propertyPrefix, numOfStaticsCounted)
 
 		expectedValue := fmt.Sprintf("%s%d", valuePrefix, numOfStaticsCounted)
@@ -72,7 +72,7 @@ func TestFull(t *testing.T) {
 			t.Fatalf("Read static value %s, expected %s", readValue, expectedValue)
 		}
 
-		gotValue, err := reader.GetStaticValue(staticLabel)
+		gotValue, err := r.GetStaticValue(staticLabel)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -95,14 +95,14 @@ func TestFull(t *testing.T) {
 
 	numOfCountersCounted := 0
 
-	reader.ForEachCounter(func(id, value int64, label string) bool {
+	r.ForEachCounter(func(id, value int64, label string) bool {
 		counterLabel := fmt.Sprintf("%s%d", counterPrefix, value)
 
 		if label != counterLabel {
 			t.Fatalf("Got counter label %s, expected %s", label, counterLabel)
 		}
 
-		foundLabel, err := reader.GetCounterLabel(id)
+		foundLabel, err := r.GetCounterLabel(id)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -129,7 +129,7 @@ func TestFull(t *testing.T) {
 		}
 	}
 
-	reader.ForEachCounter(func(id, value int64, label string) bool {
+	r.ForEachCounter(func(id, value int64, label string) bool {
 		t.Error("No counters must be available")
 		return true
 	})
@@ -148,24 +148,24 @@ func TestConcurrentCountersModification(t *testing.T) {
 
 	statics := make(map[string]string)
 
-	writer, err := NewWriterForFile(filename, statics, numberOfCounters)
+	w, err := NewWriterForFile(filename, statics, numberOfCounters)
 	if err != nil {
 		t.Error(err)
 	}
 	defer os.Remove(filename)
-	defer writer.Close()
+	defer w.Close()
 
-	reader, err := NewReaderForFile(filename)
+	r, err := NewReaderForFile(filename)
 	if err != nil {
 		t.Error(err)
 	}
-	defer reader.Close()
+	defer r.Close()
 
-	cnt0, err := writer.AddCounterWithInitialValue(fmt.Sprintf("%s%d", counterPrefix, 0), 0)
+	cnt0, err := w.AddCounterWithInitialValue(fmt.Sprintf("%s%d", counterPrefix, 0), 0)
 	if err != nil {
 		t.Error(err)
 	}
-	cnt1, err := writer.AddCounterWithInitialValue(fmt.Sprintf("%s%d", counterPrefix, 1), 1)
+	cnt1, err := w.AddCounterWithInitialValue(fmt.Sprintf("%s%d", counterPrefix, 1), 1)
 	if err != nil {
 		t.Error(err)
 	}
@@ -232,18 +232,18 @@ func TestConcurrentCountersAddClose(t *testing.T) {
 
 	statics := make(map[string]string)
 
-	writer, err := NewWriterForFile(filename, statics, numberOfCounters)
+	w, err := NewWriterForFile(filename, statics, numberOfCounters)
 	if err != nil {
 		t.Error(err)
 	}
 	defer os.Remove(filename)
-	defer writer.Close()
+	defer w.Close()
 
-	reader, err := NewReaderForFile(filename)
+	r, err := NewReaderForFile(filename)
 	if err != nil {
 		t.Error(err)
 	}
-	defer reader.Close()
+	defer r.Close()
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -252,14 +252,14 @@ func TestConcurrentCountersAddClose(t *testing.T) {
 
 	gen0 := func() {
 		for i := 0; i < iterations; i++ {
-			addAndCloseCounter(t, writer, reader, i)
+			addAndCloseCounter(t, w, r, i)
 		}
 		wg.Done()
 	}
 
 	gen1 := func() {
 		for i := 0; i < iterations; i++ {
-			addAndCloseCounter(t, writer, reader, i)
+			addAndCloseCounter(t, w, r, i)
 		}
 		wg.Done()
 	}
