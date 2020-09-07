@@ -2,7 +2,7 @@
 Counters for midi- and microservices.
 
 ## Motivation and goals
-It's a common problem to collect and expose metrics from your macro- and microservice applications. This library tryes to help you whith it.
+It's a common problem to collect and expose metrics from your midi- and microservice applications. This library tryes to help you whith it.
 
 The library is aimed to be:
  - as fast as possible. It uses memory mapped files and direct memory access to store the counters.
